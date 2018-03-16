@@ -6,7 +6,7 @@
 ~~~~
 
 ## Loading
-### ATmega329P
+### ATmega328P
 ~~~~
 . avrdude -c usbtiny -p atmega328p -U flash:w:myFile.s.hex
 ~~~~
