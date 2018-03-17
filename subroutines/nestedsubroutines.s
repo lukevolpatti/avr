@@ -25,11 +25,23 @@ rjmp   LOOP				  ; Infinite loop
 
 
 SUBROUTINE:
+call NESTEDSUBROUTINE
 push   R16
 push   R17
 
 LDI    R16,  0b11111111 ; Loading garbage into R16 and R17
 LDI    R17,  0b11111111
+
+pop    R17              ; Recovering original values
+pop    R16
+ret
+
+NESTEDSUBROUTINE:
+push   R16
+push   R17
+
+LDI    R16,  0b00000000 ; Loading garbage into R16 and R17
+LDI    R17,  0b00000000
 
 pop    R17              ; Recovering original values
 pop    R16
