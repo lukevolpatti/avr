@@ -2,11 +2,11 @@
 ## Compiling
 ### Using avra
 ~~~~
-. avra myFile.s
+avra myFile.s
 ~~~~
 
 ## Loading
 ### ATmega328P
 ~~~~
-. avrdude -c usbtiny -p atmega328p -U flash:w:myFile.s.hex
+avrdude -c usbtiny -p atmega328p -U flash:w:myFile.s.hex
 ~~~~
