@@ -1,4 +1,5 @@
 # avr
+A repository of AVR code examples.
 ## Compiling
 ### Using avra
 ~~~~
