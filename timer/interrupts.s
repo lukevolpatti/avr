@@ -38,7 +38,8 @@ timerOverflowISR:
 	; Reset the timer
 	ldi r16, 1
 	out TIFR0, r16	; Reset overflow flag
-	ldi r16, 0
-	out TCNT0, r16	; Reset timer count
+	; Works even if you don't clear the timer count:
+	;ldi r16, 0
+	;out TCNT0, r16	; Reset timer count
 
 	reti
