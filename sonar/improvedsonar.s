@@ -27,6 +27,7 @@ reset:	; Stack initialization
 			; CHECK THIS!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	ldi r16, 1
 	out DDRD, r16
+	sbi DDRB, 0 ; set portb0 to output
 
 	; Setting timer
 	ldi r16, 0b00000011	; Set timer prescaler to /64
@@ -44,6 +45,11 @@ reset:	; Stack initialization
 ;--------------;
 main_loop:
 	cli	; Disable interrupts for now
+	ldi r16, 1
+	out PORTB, r16 ; turn bjt on
+
+
+
 	ldi r19, 0	; r19 will keep track of whether we've had
 			; and interrupt
 
@@ -74,7 +80,7 @@ trigger:
 	; Onboard clock is at ~1MHz, so can have a variable initialized
 	; to 5 and decrement it in a loop. There are two instruction in
 	; the loop, so each iteration of the loop will take 2 microseconds.
-	ldi r16, 10	; Setting initial value of 5
+	ldi r16, 6	; Setting initial value of 5
 count:	dec r16		; Decrement counting variable
 	brne count	; Loop if we're not at 0.
 	
@@ -91,14 +97,14 @@ waitForEcho:
 			; INT0's interrupt enables once echo comes high
 
 pollForEchoHigh:
-	in r17, PORTD		; Get PORTB
+	in r17, PIND		; Get PIND. PIN for inputs, PORT for outputs.
 	andi r17, 0b00000100	; Check if bit 2 is high. This bit
 				; corresponds to the echo
 	breq pollForEchoHigh	; Echo is low. Loop.
 
 	; We made it! Echo is high, the action starts now!
 	; Set timer count to appropriate value
-	ldi r17, 240		; Overflow occurs at 255.
+	ldi r17, 230		; Overflow occurs at 255.
 	out TCNT0, r17
 
 	; Enable timer, global, and INT0 interrupts
@@ -106,15 +112,19 @@ pollForEchoHigh:
 	out EIMSK, r16
 	sei
 
+	ret
+
 
 ;------;
 ; ISRs ;
 ;------;
 timerOverflowISR:
+	ldi r16, 0
+	out PORTB, r16
 	; Timer won!
 	; Object is too far away. Set LED to low.
 	ldi r16, 0
-	out PINC, r16
+	out PORTC, r16
 
 	; Reset the timer
 	ldi r16, 1
@@ -126,13 +136,31 @@ timerOverflowISR:
 	; Signal that we've had an interrupt
 	ldi r19, 1
 
+	; TESTING:
+	;ldi r16, 0b00000100
+	;out DDRD, r16
+	;ldi r16, 0
+	;out PORTD, r16
+	;ldi r17, 255
+	;ldi r18, 1
+loopy:
+	;dec r17
+	;brne loopy
+	;dec r18
+	;brne loopy
+
+	;ldi r16, 1
+	;out DDRD, r16 
+	;ldi r16, 0
+	;out PORTD, r16
+
 	reti
 
 externalISR:
 	; Sonar won!
 	; Object is close enough. Set LED to high.
 	ldi r16, 1
-	out PINC, r16
+	out PORTC, r16
 
 	; Reset the timer
 	out TIFR0, r16
