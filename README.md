@@ -11,3 +11,5 @@ avra myFile.s
 ~~~~
 avrdude -c usbtiny -p atmega328p -U flash:w:myFile.s.hex
 ~~~~
+
+To do: motor control, IR sensors, possibly button control.
