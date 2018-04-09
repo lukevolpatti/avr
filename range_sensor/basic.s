@@ -28,8 +28,10 @@ reset:	; Stack initialization
 ;--------------;
 
 adc:
+	; Making sure ADC can be used
 	ldi r16, 0
 	sts PRR, r16
+
 	; Configuring ADC
 	ldi r16, 0b11001111	; Enable interrupts, prescale 128
 	sts ADCSRA, r16
@@ -37,11 +39,13 @@ adc:
 				; left adjust, ADC2
 	sts ADMUX, r16
 
+	; Resetting r19
 	ldi r19, 0
 
 	sei		; Enable global interrupts
 
 loop:
+	; See if r19 has been set yet (i.e. interrupt has occured)
 	cpi r19, 0
 	breq loop
 	jmp adc
@@ -51,9 +55,6 @@ loop:
 ; ISR ;
 ;-----;
 adc_handler:
-	;ldi r16, 0b00000010
-	;out portc, r16
-	;sbi portc, 1
 	; Conversion is complete. Now need to see what the data register hold.
 	; Number in the data registers is Vin*1024/Vref. In our case, we want
 	; to see if that value ever dips below 200. 
@@ -65,7 +66,6 @@ adc_handler:
 	lsr r17
 	lsr r17
 	lsr r17
-	;out portc, r17
 	cpi r17, 0b00000001	; Compare r17 to 265
 	brlt led_off		; Too far; turn led off
 
