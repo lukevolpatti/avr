@@ -158,6 +158,10 @@ reverse_fsm:
 	cpi r22, 3
 	breq both_motors_forward_branch
 
+	; Turn off timer 0
+	ldi r16, 0
+	sts TIMSK0, r16
+	
 	; Restore stack
 	pop r21
 	pop r20
