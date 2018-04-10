@@ -17,21 +17,28 @@ jmp reset
 .org 0x001A
 jmp timer1_overflow_handler
 
+; Timer 0 overflow handler
+.org 0x0020
+jmp timer0_overflow_handler
+
 ; ADC handler
 .org 0x002A
 jmp adc_handler
+
+
 
 ;--------;
 ; WIRING ;
 ;--------;
 ; PORTC0: Range status LED. This LED will be on if the car is not about to go
 ;	over the edge.
-; PORTC1: Testing LED.
+; PORTC1: Reverse routine LED. Flashes while reverse routine is taking place.
 ; PORTC2: ADC2. Used for the range sensor.
 ; PORTB1: Left motor reverse.
 ; PORTB2: Left motor forward.
 ; PORTB6: Right motor forward.
 ; PORTB7: Right motor reverse.
+
 
 
 ;--------------;
@@ -44,6 +51,8 @@ jmp adc_handler
 	; throw away 10 first readings)
 ; r21: Motor reverse flag. ADC ISR sets this to 1 when the motor reverse
 	; routine needs to be executed.
+
+
 
 ;---------------;
 ; RESET ROUTINE ;
@@ -69,6 +78,7 @@ reset:	; Stack initialization
 
 	; A status register to see if there's been an interrupt
 	ldi r19, 0
+
 
 
 ;--------------;
@@ -114,13 +124,19 @@ reverse:
 ; Timer 1 is dedicated to the reverse subroutine.
 	; Put important registers on the stack so we don't accidentally mess
 	; them up.
-	;push r19
-	;push r20
-	;push r21
+	push r19
+	push r20
+	push r21
 
 	; Register r22 will keep track of our state in our mini FSM
 	ldi r22, 0
-	
+
+timer0_setup:
+	ldi r16, 0b00000101	; Set timer prescaler to 8
+	out TCCR0B, r16
+	ldi r16, 0b00000001	; Set timer interrupts
+	sts TIMSK0, r16
+
 timer1_setup:
 	ldi r16, 0b00000010	; Set timer prescaler to 8
 	sts TCCR1B, r16
@@ -130,6 +146,8 @@ timer1_setup:
 	; occured
 	ldi r23, 0
 
+; This is the FSM that we will step through. It will take us through the
+; various stages of motor reversal. 
 reverse_fsm:
 	cpi r22, 0
 	breq both_motors_reverse_branch
@@ -140,9 +158,10 @@ reverse_fsm:
 	cpi r22, 3
 	breq both_motors_forward_branch
 
-	;pop r21
-	;pop r20
-	;pop r19
+	; Restore stack
+	pop r21
+	pop r20
+	pop r19
 	
 	ret
 
@@ -189,6 +208,8 @@ both_motors_forward:
 
 		ret
 
+
+
 ;------;
 ; ISRs ;
 ;------;
@@ -212,29 +233,34 @@ adc_handler:
 	jmp end_adc_handler
 
 set_adc_flag:
-	cpi r20, 0
+	cpi r20, 0		; This will be zero if we've already done 10
+				; readings.
 	breq real
 	dec r20
 	jmp end_adc_handler
 
 real:
-	ldi r16, 0		; turn off LED
+	ldi r16, 0		; Turn off LED
 	out PORTC, r16
-
-	; TESTING
-	;ldi r16, 0b10000010
-	;out PORTB, r16
-	ldi r21, 1
+	ldi r21, 1		; Set the motor reverse flag
 
 	jmp end_adc_handler
 
 end_adc_handler:
-	ldi r19, 1
+	ldi r19, 1		; Set the ADC flag
 	reti
 
 
 timer1_overflow_handler:
-	ldi r23, 1
+	sei			; Enable interrupts for nested interrupts
+	ldi r23, 1		; Set timer interrupt flag
 	ldi r16, 1
-	out TIFR1, r16
+	out TIFR1, r16		; Reset timer
+	reti
+
+timer0_overflow_handler:
+	sei			; Enable interrupts for nested interrupts
+	sbi PINC, 1
+	ldi r16, 1
+	out TIFR0, r16		; Reset timer
 	reti
