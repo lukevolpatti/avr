@@ -1,5 +1,5 @@
 # avr
-A repository of AVR code examples.
+A repository of AVR code examples. Includes code for an autonomous LEGO car. 
 ## Compiling
 ### Using avra
 ~~~~
